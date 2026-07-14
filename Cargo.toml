@@ -2,7 +2,7 @@
 resolver = "2"
 members = [
     "generic-api",
-    "generic-macros", 
+    "generic-macros", "generic-test", 
     "generic-tool", 
     "generic-type"
 ]
@@ -21,4 +21,5 @@ sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "mysql
 thiserror = "2.0.18"
 anyhow = "1.0.103"
 const_format = "0.2"
+async-trait = "0.1"
 

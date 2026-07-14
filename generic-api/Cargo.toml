@@ -12,5 +12,7 @@ serde_json.workspace = true
 serde.workspace = true
 tokio.workspace = true
 local-ip-address.workspace = true
+sqlx.workspace = true
+async-trait.workspace = true
 generic-type = {path = "../generic-type"}
 generic-tool = {path = "../generic-tool"}
