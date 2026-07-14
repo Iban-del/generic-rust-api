@@ -261,6 +261,7 @@ name = "generic-type"
 version = "0.1.0"
 dependencies = [
  "generic-tool",
+ "inventory",
  "proc-macro2",
  "quote",
  "syn",

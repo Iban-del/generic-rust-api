@@ -8,3 +8,4 @@ syn.workspace = true
 quote.workspace = true
 proc-macro2.workspace = true
 generic-tool = {path = "../generic-tool"}
+inventory.workspace = true
