@@ -1,7 +1,4 @@
-use axum::{
-    http::{Response, StatusCode},
-    response::IntoResponse,
-};
+use axum::{http::StatusCode, response::IntoResponse};
 use serde::Serialize;
 
 // ---- Structure de reponse valide ----
