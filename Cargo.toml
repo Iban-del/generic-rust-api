@@ -1,0 +1,24 @@
+[workspace]
+resolver = "2"
+members = [
+    "generic-api",
+    "generic-macros", 
+    "generic-tool", 
+    "generic-type"
+]
+
+[workspace.dependencies]
+inventory = "0.3.24"
+syn = { version = "2", features = ["full", "extra-traits"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+quote = "1"
+proc-macro2 = "1.0"
+axum = "0.8.9"
+tokio = { version = "1.52.3", features = ["full"] }
+local-ip-address = "0.6"
+sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "mysql" , "macros"] }
+thiserror = "2.0.18"
+anyhow = "1.0.103"
+const_format = "0.2"
+

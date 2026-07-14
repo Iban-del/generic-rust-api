@@ -1,0 +1,16 @@
+[package]
+name = "generic-api"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+axum.workspace = true
+inventory.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+serde_json.workspace = true
+serde.workspace = true
+tokio.workspace = true
+local-ip-address.workspace = true
+generic-type = {path = "../generic-type"}
+generic-tool = {path = "../generic-tool"}

@@ -1,0 +1,10 @@
+[package]
+name = "generic-tool"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+local-ip-address.workspace = true
+syn.workspace = true
+serde_json.workspace = true
+serde.workspace = true
