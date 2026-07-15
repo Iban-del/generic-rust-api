@@ -22,4 +22,6 @@ thiserror = "2.0.18"
 anyhow = "1.0.103"
 const_format = "0.2"
 async-trait = "0.1"
+chrono = "0.4.45"
+strum = { version = "0.28.0", features = ["derive"] }
 

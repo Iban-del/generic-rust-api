@@ -35,11 +35,11 @@ pub trait Connection {
 /// Cette structure conserve les paramètres nécessaires à l'établissement
 /// du pool (URL de connexion, bornes min/max du nombre de connexions)
 /// ainsi que le pool lui-même une fois la connexion établie.
-pub struct SqlConnection {
+pub struct SqlConnection<DB: sqlx::Database> {
     /// Pool de connexions SQL actif, initialisé après un appel réussi à
     /// [`SqlConnection::connect`]. Vaut `None` tant que la connexion
     /// n'a pas été établie.
-    pool: Option<sqlx::AnyPool>,
+    pool: Option<sqlx::Pool<DB>>,
     /// URL de connexion à la base de données (chaîne de connexion).
     url: String,
     /// Nombre maximum de connexions autorisées dans le pool.
@@ -48,7 +48,10 @@ pub struct SqlConnection {
     min_connections: u32,
 }
 
-impl SqlConnection {
+impl<DB> SqlConnection<DB>
+where
+    DB: sqlx::Database,
+{
     /// Crée une nouvelle instance de [`SqlConnection`] sans établir de connexion.
     ///
     /// Le pool n'est initialisé qu'après un appel à [`SqlConnection::connect`].
@@ -69,7 +72,10 @@ impl SqlConnection {
 }
 
 #[async_trait::async_trait]
-impl Connection for SqlConnection {
+impl<DB> Connection for SqlConnection<DB>
+where
+    DB: sqlx::Database,
+{
     /// Initialise le pool de connexions SQL en utilisant les paramètres
     /// configurés (`url`, `max_connections`, `min_connections`).
     ///
@@ -81,11 +87,12 @@ impl Connection for SqlConnection {
     /// Retourne une [`crate::error::DatabaseError`] si l'établissement
     /// du pool de connexions échoue.
     async fn connect(&mut self) -> Result<(), crate::error::DatabaseError> {
-        let pool = sqlx::any::AnyPoolOptions::new()
+        let pool = sqlx::pool::PoolOptions::<DB>::new()
             .max_connections(self.max_connections)
             .min_connections(self.min_connections)
             .connect(&self.url)
-            .await?;
+            .await
+            .map_err(|e| crate::error::DatabaseError::Sql(crate::error::SqlError::Sqlx(e)))?;
 
         self.pool = Some(pool);
         Ok(())
@@ -101,11 +108,11 @@ impl Connection for SqlConnection {
     fn get_query(
         &self,
     ) -> Result<Box<dyn crate::database::query::Query>, crate::error::DatabaseError> {
-        let pool: sqlx::Pool<sqlx::Any> = match &self.pool {
+        let pool: sqlx::Pool<DB> = match &self.pool {
             Some(pl) => pl.clone(),
             None => {
-                return Err(crate::error::DatabaseError::PoolNotDefined(
-                    "The pool is not defined".to_string(),
+                return Err(crate::error::DatabaseError::Sql(
+                    crate::error::SqlError::PoolNotDefined("The pool is not defined".to_string()),
                 ));
             }
         };

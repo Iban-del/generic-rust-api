@@ -9,11 +9,8 @@ pub enum AppError {
 
 #[derive(Debug, thiserror::Error)]
 pub enum DatabaseError {
-    #[error("Sqlx error : {0}")]
-    Sqlx(#[from] sqlx::Error),
-
-    #[error("Pool not found : {0}")]
-    PoolNotDefined(String),
+    #[error("Failed to load the connector : {0}")]
+    FailedLoadConnector(String),
 
     #[error("Sql error : {0}")]
     Sql(SqlError),
@@ -23,6 +20,9 @@ pub enum DatabaseError {
 pub enum SqlError {
     #[error("Sqlx error : {0}")]
     Sqlx(#[from] sqlx::Error),
+
+    #[error("Pool not found : {0}")]
+    PoolNotDefined(String),
 
     #[error("The predicate not found : {0}")]
     PredicateNotExist(String),
