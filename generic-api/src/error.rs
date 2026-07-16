@@ -32,4 +32,13 @@ pub enum SqlError {
 
     #[error("The provided type is not supported : {0}")]
     UnsupportedType(String),
+
+    #[error("ResultSet error: {0}")]
+    ResultSetError(String),
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum ResultSetError {
+    #[error("The resultSet is empty")]
+    EmptyError(),
 }

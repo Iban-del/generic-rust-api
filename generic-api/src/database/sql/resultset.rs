@@ -31,12 +31,11 @@ impl<M> ResultSet<M> {
         self.data.len()
     }
 
-    pub fn current(&self) -> Option<&M> {
+    pub fn current(&self) -> Result<&M, crate::error::ResultSetError> {
         if self.count() > 0 {
-            Some(&self.data[0])
-        } else {
-            None
+            return Ok(&self.data[0]);
         }
+        Err(crate::error::ResultSetError::EmptyError())
     }
 }
 
