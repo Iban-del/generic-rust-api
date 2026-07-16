@@ -4,7 +4,7 @@
 /// de connexion (SQL, NoSQL, etc.), permettant d'établir une connexion et
 /// d'obtenir un objet capable d'exécuter des requêtes.
 #[async_trait::async_trait]
-pub trait Connection {
+pub trait Connection: Send + Sync {
     /// Établit la connexion à la source de données.
     ///
     /// Cette méthode est asynchrone et mute l'état interne de la connexion

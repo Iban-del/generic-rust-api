@@ -1,1 +1,11 @@
-pub struct AppState {}
+pub struct AppState {
+    db_state: crate::database::state::DatabaseState,
+}
+
+impl AppState {
+    pub async fn new(config: crate::config::Config) -> Result<Self, crate::error::AppError> {
+        let db_state = crate::database::state::DatabaseState::new(config).await?;
+
+        Ok(Self { db_state })
+    }
+}

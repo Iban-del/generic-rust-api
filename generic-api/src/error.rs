@@ -12,6 +12,9 @@ pub enum DatabaseError {
     #[error("Failed to load the connector : {0}")]
     FailedLoadConnector(String),
 
+    #[error("The connector not found : {0}")]
+    ConnectorNotFound(String),
+
     #[error("Sql error : {0}")]
     Sql(SqlError),
 }

@@ -10,9 +10,9 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(config_path: &str) -> anyhow::Result<Self> {
+    pub async fn new(config_path: &str) -> anyhow::Result<Self> {
         let config: Config = read_json::<Config>(config_path.to_string())?;
-        let state: AppState = Self::build_state(&config)?;
+        let state: AppState = Self::build_state(config.clone()).await?;
 
         anyhow::Ok(Self {
             app_state: Arc::new(state),
@@ -42,7 +42,7 @@ impl App {
 
     // ---- Construction du Appstate ----
 
-    fn build_state(_config: &Config) -> anyhow::Result<AppState> {
-        anyhow::Ok(AppState {})
+    async fn build_state(config: Config) -> anyhow::Result<AppState> {
+        anyhow::Ok(AppState::new(config).await?)
     }
 }
