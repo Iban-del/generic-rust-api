@@ -1,7 +1,5 @@
 pub struct DatabaseState {
     sql_connectors: std::collections::HashMap<String, crate::database::connection::SqlConnector>,
-    // plus tard :
-    // neo4j_connectors: std::collections::HashMap<String, crate::database::connection::Neo4jConnector>,
 }
 
 impl DatabaseState {
@@ -22,8 +20,27 @@ impl DatabaseState {
         })
     }
 
-    // plus tard :
-    // pub fn get_neo4j_connector(&self, alias: &str) -> Result<&Neo4jConnector, ...> { ... }
+    pub fn get_sql_query<DB: sqlx::Database + 'static>(
+        &self,
+        alias: &str,
+    ) -> Result<crate::database::query::SqlQuery<DB>, crate::error::DatabaseError> {
+        let conn = self.get_sql_connector(alias)?;
+
+        let boxed: Box<dyn std::any::Any> = match conn {
+            crate::database::connection::SqlConnector::Postgres(c) => Box::new(c.get_query()?),
+            crate::database::connection::SqlConnector::MySql(c) => Box::new(c.get_query()?),
+        };
+
+        boxed
+            .downcast::<crate::database::query::SqlQuery<DB>>()
+            .map(|b| *b)
+            .map_err(|_| {
+                crate::error::DatabaseError::ConnectorNotFound(format!(
+                    "The connector '{}' does not match the requested database type",
+                    alias
+                ))
+            })
+    }
 
     async fn load_sql_connectors(
         config: crate::config::Config,
