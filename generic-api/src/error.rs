@@ -26,4 +26,7 @@ pub enum SqlError {
 
     #[error("The predicate not found : {0}")]
     PredicateNotExist(String),
+
+    #[error("The provided type is not supported : {0}")]
+    UnsupportedType(String),
 }

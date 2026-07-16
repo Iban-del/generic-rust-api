@@ -9,8 +9,6 @@ use crate::database::sql;
 pub enum SqlType {
     /// Valeur textuelle (sera entourée de guillemets simples lors du formatage).
     Text(String),
-    /// Valeur numérique entière non signée.
-    UNumber(u64),
     /// Valeur numérique entière signée.
     INumber(i64),
     /// Valeur numérique à virgule flottante.
@@ -39,41 +37,6 @@ impl From<String> for SqlType {
 impl From<bool> for SqlType {
     fn from(value: bool) -> Self {
         Self::Bool(value)
-    }
-}
-
-/// Convertit un `u8` en [`SqlType::UNumber`] (conversion vers `u64`).
-impl From<u8> for SqlType {
-    fn from(value: u8) -> Self {
-        Self::UNumber(value as u64)
-    }
-}
-
-/// Convertit un `u16` en [`SqlType::UNumber`] (conversion vers `u64`).
-impl From<u16> for SqlType {
-    fn from(value: u16) -> Self {
-        Self::UNumber(value as u64)
-    }
-}
-
-/// Convertit un `u32` en [`SqlType::UNumber`] (conversion vers `u64`).
-impl From<u32> for SqlType {
-    fn from(value: u32) -> Self {
-        Self::UNumber(value as u64)
-    }
-}
-
-/// Convertit un `u64` en [`SqlType::UNumber`].
-impl From<u64> for SqlType {
-    fn from(value: u64) -> Self {
-        Self::UNumber(value)
-    }
-}
-
-/// Convertit un `usize` en [`SqlType::UNumber`] (conversion vers `u64`).
-impl From<usize> for SqlType {
-    fn from(value: usize) -> Self {
-        Self::UNumber(value as u64)
     }
 }
 
@@ -136,10 +99,9 @@ impl std::fmt::Display for SqlType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             SqlType::Text(val) => write!(f, r"'{}'", val),
-            SqlType::UNumber(val) => write!(f, "{}", val),
-            SqlType::INumber(val) => write!(f, "{}", val),
-            SqlType::Float(val) => write!(f, "{}", val),
-            SqlType::Bool(val) => write!(f, "{}", val),
+            SqlType::INumber(val) => write!(f, r"{}", val),
+            SqlType::Float(val) => write!(f, r"{}", val),
+            SqlType::Bool(val) => write!(f, r"{}", val),
             SqlType::List(sql_types) => {
                 write!(f, "(")?;
 
@@ -151,46 +113,6 @@ impl std::fmt::Display for SqlType {
                 }
 
                 write!(f, ")")
-            }
-        }
-    }
-}
-
-impl<DB: sqlx::Database> sqlx::Type<DB> for SqlType
-where
-    String: sqlx::Type<DB>,
-{
-    fn type_info() -> DB::TypeInfo {
-        <String as sqlx::Type<DB>>::type_info()
-    }
-
-    fn compatible(_ty: &DB::TypeInfo) -> bool {
-        true
-    }
-}
-
-impl<'q, DB> sqlx::Encode<'q, DB> for SqlType
-where
-    DB: sqlx::Database,
-    String: sqlx::Encode<'q, DB>,
-    u64: sqlx::Encode<'q, DB>,
-    i64: sqlx::Encode<'q, DB>,
-    f64: sqlx::Encode<'q, DB>,
-    bool: sqlx::Encode<'q, DB>,
-{
-    fn encode_by_ref(
-        &self,
-        buf: &mut <DB as sqlx::Database>::ArgumentBuffer<'q>,
-    ) -> Result<sqlx::encode::IsNull, sqlx::error::BoxDynError> {
-        match self {
-            SqlType::Text(val) => val.encode_by_ref(buf),
-            SqlType::UNumber(val) => val.encode_by_ref(buf),
-            SqlType::INumber(val) => val.encode_by_ref(buf),
-            SqlType::Float(val) => val.encode_by_ref(buf),
-            SqlType::Bool(val) => val.encode_by_ref(buf),
-            SqlType::List(sql_types) => {
-                let val = serde_json::to_string(sql_types)?;
-                val.encode_by_ref(buf)
             }
         }
     }

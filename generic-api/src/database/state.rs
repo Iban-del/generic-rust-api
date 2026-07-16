@@ -33,7 +33,7 @@ impl DatabaseState {
                         conn.min_connections,
                     ),
                 ),
-                crate::config::SqlDatabaseType::MariaDB => Box::new(
+                crate::config::SqlDatabaseType::MySql => Box::new(
                     crate::database::connection::SqlConnection::<sqlx::MySql>::new(
                         conn.url,
                         conn.max_connections,

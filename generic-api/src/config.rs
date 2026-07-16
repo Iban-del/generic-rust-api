@@ -3,7 +3,7 @@
 #[strum(serialize_all = "lowercase")]
 pub enum SqlDatabaseType {
     Postgres,
-    MariaDB,
+    MySql,
 }
 
 #[derive(Debug, Clone, serde::Deserialize)]
