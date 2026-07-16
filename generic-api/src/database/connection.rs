@@ -35,6 +35,7 @@ pub trait Connection: Send + Sync {
 /// Cette structure conserve les paramètres nécessaires à l'établissement
 /// du pool (URL de connexion, bornes min/max du nombre de connexions)
 /// ainsi que le pool lui-même une fois la connexion établie.
+
 pub struct SqlConnection<DB: sqlx::Database> {
     /// Pool de connexions SQL actif, initialisé après un appel réussi à
     /// [`SqlConnection::connect`]. Vaut `None` tant que la connexion

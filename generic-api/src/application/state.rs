@@ -1,5 +1,5 @@
 pub struct AppState {
-    db_state: crate::database::state::DatabaseState,
+    pub db_state: crate::database::state::DatabaseState,
 }
 
 impl AppState {
