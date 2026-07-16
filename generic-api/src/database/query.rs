@@ -10,6 +10,28 @@ where
         Self { pool }
     }
 
+    pub async fn fetch_all<'q, T>(
+        &self,
+        query: String,
+        params: Vec<crate::database::sql::types::SqlType>,
+    ) -> Result<crate::database::sql::resultset::ResultSet<T>, crate::error::SqlError>
+    where
+        for<'r> T: sqlx::FromRow<'r, <DB as sqlx::Database>::Row>,
+        <DB as sqlx::Database>::Arguments<'q>: sqlx::IntoArguments<'q, DB>,
+        i64: sqlx::Encode<'q, DB> + sqlx::Type<DB>,
+        String: sqlx::Encode<'q, DB> + sqlx::Type<DB>,
+        f64: sqlx::Encode<'q, DB> + sqlx::Type<DB>,
+        bool: sqlx::Encode<'q, DB> + sqlx::Type<DB>,
+        for<'c> &'c mut <DB as sqlx::Database>::Connection: sqlx::Executor<'c, Database = DB>,
+    {
+        let rows: Vec<<DB as sqlx::Database>::Row> = self
+            .build_query::<'q>(query, params)?
+            .fetch_all(&self.pool)
+            .await?;
+
+        Ok(crate::database::sql::resultset::ResultSet::new::<DB>(rows)?)
+    }
+
     pub async fn execute<'q>(
         &self,
         query: String,
@@ -23,7 +45,7 @@ where
         bool: sqlx::Encode<'q, DB> + sqlx::Type<DB>,
         for<'c> &'c mut <DB as sqlx::Database>::Connection: sqlx::Executor<'c, Database = DB>,
     {
-        let result = self
+        let result: <DB as sqlx::Database>::QueryResult = self
             .build_query::<'q>(query, params)?
             .execute(&self.pool)
             .await?;

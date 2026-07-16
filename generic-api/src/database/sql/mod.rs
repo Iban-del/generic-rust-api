@@ -5,6 +5,7 @@ pub trait SqlRequest {
 pub mod clauses;
 pub mod delete;
 pub mod insert;
+pub mod resultset;
 pub mod select;
 pub mod table;
 pub mod types;
