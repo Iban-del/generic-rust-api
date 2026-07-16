@@ -1,85 +1,64 @@
 pub struct DatabaseState {
-    connectors: std::collections::HashMap<String, Box<dyn crate::database::connection::Connection>>,
+    sql_connectors: std::collections::HashMap<String, crate::database::connection::SqlConnector>,
+    // plus tard :
+    // neo4j_connectors: std::collections::HashMap<String, crate::database::connection::Neo4jConnector>,
 }
 
 impl DatabaseState {
     pub async fn new(config: crate::config::Config) -> Result<Self, crate::error::DatabaseError> {
-        let connectors: std::collections::HashMap<
-            String,
-            Box<dyn crate::database::connection::Connection>,
-        > = Self::load_connectors(config).await?;
+        let sql_connectors = Self::load_sql_connectors(config).await?;
+        Ok(Self { sql_connectors })
+    }
 
-        Ok(Self {
-            connectors: connectors,
+    pub fn get_sql_connector(
+        &self,
+        alias: &str,
+    ) -> Result<&crate::database::connection::SqlConnector, crate::error::DatabaseError> {
+        self.sql_connectors.get(alias).ok_or_else(|| {
+            crate::error::DatabaseError::ConnectorNotFound(format!(
+                "The sql connector with alias '{}' not found",
+                alias
+            ))
         })
     }
 
-    pub fn get_connectors(
-        &self,
-    ) -> &std::collections::HashMap<String, Box<dyn crate::database::connection::Connection>> {
-        &self.connectors
-    }
+    // plus tard :
+    // pub fn get_neo4j_connector(&self, alias: &str) -> Result<&Neo4jConnector, ...> { ... }
 
-    pub fn get_query(
-        &self,
-        alias: &str,
-    ) -> Result<Box<dyn crate::database::query::Query>, crate::error::DatabaseError> {
-        let conn: &Box<dyn crate::database::connection::Connection> = self.get_connector(alias)?;
-        let query = conn.get_query()?;
-        Ok(query)
-    }
-
-    pub fn get_connector(
-        &self,
-        alias: &str,
-    ) -> Result<&Box<dyn crate::database::connection::Connection>, crate::error::DatabaseError>
-    {
-        for (key, conn) in &self.connectors {
-            if key.eq(&alias.to_string()) {
-                return Ok(conn);
-            }
-        }
-        Err(crate::error::DatabaseError::ConnectorNotFound(format!(
-            "The connector with alias '{}' not found",
-            alias
-        )))
-    }
-
-    async fn load_connectors(
+    async fn load_sql_connectors(
         config: crate::config::Config,
     ) -> Result<
-        std::collections::HashMap<String, Box<dyn crate::database::connection::Connection>>,
+        std::collections::HashMap<String, crate::database::connection::SqlConnector>,
         crate::error::DatabaseError,
     > {
-        let mut hs_conn: std::collections::HashMap<
-            String,
-            Box<dyn crate::database::connection::Connection>,
-        > = std::collections::HashMap::new();
+        let mut sql_connectors = std::collections::HashMap::new();
         let sec_db: crate::config::Database = config.database;
 
-        // gestion des connecteur sql
         for conn in sec_db.sql_connectors.into_iter() {
-            let mut conn_box: Box<dyn crate::database::connection::Connection> = match conn.db_type
-            {
-                crate::config::SqlDatabaseType::Postgres => Box::new(
-                    crate::database::connection::SqlConnection::<sqlx::Postgres>::new(
-                        conn.url,
-                        conn.max_connections,
-                        conn.min_connections,
-                    ),
-                ),
-                crate::config::SqlDatabaseType::MySql => Box::new(
-                    crate::database::connection::SqlConnection::<sqlx::MySql>::new(
-                        conn.url,
-                        conn.max_connections,
-                        conn.min_connections,
-                    ),
-                ),
+            let mut connector = match conn.db_type {
+                crate::config::SqlDatabaseType::Postgres => {
+                    crate::database::connection::SqlConnector::Postgres(
+                        crate::database::connection::SqlConnection::<sqlx::Postgres>::new(
+                            conn.url,
+                            conn.max_connections,
+                            conn.min_connections,
+                        ),
+                    )
+                }
+                crate::config::SqlDatabaseType::MySql => {
+                    crate::database::connection::SqlConnector::MySql(
+                        crate::database::connection::SqlConnection::<sqlx::MySql>::new(
+                            conn.url,
+                            conn.max_connections,
+                            conn.min_connections,
+                        ),
+                    )
+                }
             };
-            conn_box.connect().await?;
-            hs_conn.insert(conn.alias, conn_box);
+            connector.connect().await?;
+            sql_connectors.insert(conn.alias, connector);
         }
 
-        Ok(hs_conn)
+        Ok(sql_connectors)
     }
 }
