@@ -1,81 +1,127 @@
-pub struct DatabaseState {
-    sql_connectors: std::collections::HashMap<String, crate::database::connection::SqlConnector>,
+//! Module de gestion de l'état global des bases de données de
+//! l'application.
+//!
+//! Ce module expose la structure [`StateDataBase`], qui centralise
+//! l'ensemble des pools de connexions SQL (un par alias) et fournit
+//! des méthodes d'accès pour les récupérer.
+
+/// État global regroupant l'ensemble des pools de connexions SQL de
+/// l'application, indexés par leur alias.
+pub struct StateDataBase {
+    /// Table associant chaque alias de connexion (`String`) à son
+    /// pool de connexions SQL correspondant ([`SqlPool`](crate::database::sql_pool::SqlPool)).
+    sql_contections: std::collections::HashMap<String, crate::database::sql_pool::SqlPool>,
 }
 
-impl DatabaseState {
-    pub async fn new(config: crate::config::Config) -> Result<Self, crate::error::DatabaseError> {
-        let sql_connectors = Self::load_sql_connectors(config).await?;
-        Ok(Self { sql_connectors })
+impl StateDataBase {
+    /// Crée une nouvelle instance de [`StateDataBase`] à partir de la
+    /// configuration globale de la base de données.
+    ///
+    /// Cette méthode initialise l'ensemble des pools de connexions SQL
+    /// définis dans la configuration, en s'appuyant sur
+    /// [`Self::build_sql_connector`].
+    ///
+    /// # Paramètres
+    /// - `config` : la configuration globale (`crate::config::Database`),
+    ///   contenant notamment la liste des connecteurs SQL à initialiser.
+    ///
+    /// # Retour
+    /// - `Ok(Self)` si tous les pools ont été créés avec succès.
+    /// - `Err(crate::error::DatabaseError)` si l'un des pools échoue à
+    ///   se créer.
+    pub async fn new(config: crate::config::Database) -> Result<Self, crate::error::DatabaseError> {
+        let sql_contections = Self::build_sql_connector(config.sql_connectors).await?;
+        Ok(Self { sql_contections })
     }
 
-    pub fn get_sql_connector(
-        &self,
-        alias: &str,
-    ) -> Result<&crate::database::connection::SqlConnector, crate::error::DatabaseError> {
-        self.sql_connectors.get(alias).ok_or_else(|| {
-            crate::error::DatabaseError::ConnectorNotFound(format!(
-                "The sql connector with alias '{}' not found",
-                alias
-            ))
-        })
-    }
-
-    pub fn get_sql_query<DB: sqlx::Database + 'static>(
-        &self,
-        alias: &str,
-    ) -> Result<crate::database::query::SqlQuery<DB>, crate::error::DatabaseError> {
-        let conn = self.get_sql_connector(alias)?;
-
-        let boxed: Box<dyn std::any::Any> = match conn {
-            crate::database::connection::SqlConnector::Postgres(c) => Box::new(c.get_query()?),
-            crate::database::connection::SqlConnector::MySql(c) => Box::new(c.get_query()?),
-        };
-
-        boxed
-            .downcast::<crate::database::query::SqlQuery<DB>>()
-            .map(|b| *b)
-            .map_err(|_| {
-                crate::error::DatabaseError::ConnectorNotFound(format!(
-                    "The connector '{}' does not match the requested database type",
-                    alias
-                ))
-            })
-    }
-
-    async fn load_sql_connectors(
-        config: crate::config::Config,
+    /// Construit la table des pools de connexions SQL à partir d'une
+    /// liste de configurations de connecteurs.
+    ///
+    /// Pour chaque configuration fournie, cette méthode crée un
+    /// [`SqlPool`](crate::database::sql_pool::SqlPool) et l'insère
+    /// dans la table de résultats, en utilisant l'alias de la
+    /// configuration (`conf.alias`) comme clé.
+    ///
+    /// # Paramètres
+    /// - `configs` : liste des configurations de connecteurs SQL
+    ///   (`Vec<crate::config::SqlConnector>`) à initialiser.
+    ///
+    /// # Retour
+    /// - `Ok(HashMap<String, SqlPool>)` contenant l'ensemble des pools
+    ///   créés, indexés par alias.
+    /// - `Err(crate::error::DatabaseError)` si la création d'un des
+    ///   pools échoue.
+    async fn build_sql_connector(
+        configs: Vec<crate::config::SqlConnector>,
     ) -> Result<
-        std::collections::HashMap<String, crate::database::connection::SqlConnector>,
+        std::collections::HashMap<String, crate::database::sql_pool::SqlPool>,
         crate::error::DatabaseError,
     > {
-        let mut sql_connectors = std::collections::HashMap::new();
-        let sec_db: crate::config::Database = config.database;
+        let mut hasmap: std::collections::HashMap<String, crate::database::sql_pool::SqlPool> =
+            std::collections::HashMap::new();
 
-        for conn in sec_db.sql_connectors.into_iter() {
-            let mut connector = match conn.db_type {
-                crate::config::SqlDatabaseType::Postgres => {
-                    crate::database::connection::SqlConnector::Postgres(
-                        crate::database::connection::SqlConnection::<sqlx::Postgres>::new(
-                            conn.url,
-                            conn.max_connections,
-                            conn.min_connections,
-                        ),
-                    )
-                }
-                crate::config::SqlDatabaseType::MySql => {
-                    crate::database::connection::SqlConnector::MySql(
-                        crate::database::connection::SqlConnection::<sqlx::MySql>::new(
-                            conn.url,
-                            conn.max_connections,
-                            conn.min_connections,
-                        ),
-                    )
-                }
-            };
-            connector.connect().await?;
-            sql_connectors.insert(conn.alias, connector);
+        for conf in configs {
+            let name = conf.alias.clone();
+            let pool: crate::database::sql_pool::SqlPool =
+                crate::database::sql_pool::SqlPool::new(conf).await?;
+
+            hasmap.insert(name, pool);
         }
 
-        Ok(sql_connectors)
+        Ok(hasmap)
+    }
+}
+
+impl StateDataBase {
+    /// Récupère le pool de connexions SQL correspondant à un alias
+    /// donné.
+    ///
+    /// # Paramètres
+    /// - `alias` : le nom (alias) du connecteur SQL recherché.
+    ///
+    /// # Retour
+    /// - `Ok(&SqlPool)` si un pool correspondant à l'alias existe.
+    /// - `Err(crate::error::DatabaseError::PoolNotFound)` si aucun
+    ///   pool n'est trouvé pour cet alias.
+    pub fn get_sql_pool(
+        &self,
+        alias: String,
+    ) -> Result<&crate::database::sql_pool::SqlPool, crate::error::DatabaseError> {
+        let pool = match self.sql_contections.get(&alias) {
+            Some(pl) => pl,
+            None => {
+                return Err(crate::error::DatabaseError::PoolNotFound(format!(
+                    "The pool '{}' not found!",
+                    alias
+                )));
+            }
+        };
+
+        Ok(pool)
+    }
+
+    /// Récupère directement la connexion à la base de données
+    /// associée à un alias donné.
+    ///
+    /// Cette méthode est un raccourci qui combine [`Self::get_sql_pool`]
+    /// et [`SqlPool::get_connection`](crate::database::sql_pool::SqlPool::get_connection)
+    /// afin d'obtenir directement la connexion sans passer
+    /// explicitement par le pool.
+    ///
+    /// # Paramètres
+    /// - `alias` : le nom (alias) du connecteur SQL recherché.
+    ///
+    /// # Retour
+    /// - `Ok(&sea_orm::DatabaseConnection)` si le pool correspondant à
+    ///   l'alias existe.
+    /// - `Err(crate::error::DatabaseError::PoolNotFound)` si aucun
+    ///   pool n'est trouvé pour cet alias.
+    pub fn get_sql_connection(
+        &self,
+        alias: String,
+    ) -> Result<&sea_orm::DatabaseConnection, crate::error::DatabaseError> {
+        let pool: &crate::database::sql_pool::SqlPool = self.get_sql_pool(alias)?;
+        let conn: &sea_orm::DatabaseConnection = pool.get_connection();
+        Ok(conn)
     }
 }

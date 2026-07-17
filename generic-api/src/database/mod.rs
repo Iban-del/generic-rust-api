@@ -1,4 +1,2 @@
-pub mod connection;
-pub mod query;
-pub mod sql;
+pub mod sql_pool;
 pub mod state;
