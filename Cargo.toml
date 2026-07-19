@@ -2,14 +2,14 @@
 resolver = "2"
 members = [
     "generic-api",
-    "generic-macros", "generic-test", 
+    "generic-macros", "generic-module", "generic-test", 
     "generic-tool", 
     "generic-type"
 ]
 
 [workspace.dependencies]
 inventory = "0.3.24"
-syn = { version = "2", features = ["full", "extra-traits"] }
+syn = { version = "3", features = ["full", "extra-traits"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 quote = "1"
@@ -24,4 +24,5 @@ const_format = "0.2"
 async-trait = "0.1"
 chrono = "0.4.45"
 strum = { version = "0.28.0", features = ["derive"] }
+jsonwebtoken = { version = "10.3.0", features = ["aws_lc_rs"] }
 
