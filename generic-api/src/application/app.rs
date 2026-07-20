@@ -46,3 +46,5 @@ impl App {
         anyhow::Ok(AppState::new(config).await?)
     }
 }
+
+impl App {}
