@@ -84,14 +84,13 @@ pub fn service(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let struct_name = &c_struct.ident;
 
     let expanded = quote! {
-
         #c_struct
 
         ::inventory::submit! {
-            ::generic_api::service::ServiceInstance{
-                type_service : std::any::TypeId::of::<#struct_name>(),
-                builder : |db_state:&generic_api::database::state::StateDataBase| -> Box<dyn std::any::Any + Sync + Send> {
-                    Box::new(#struct_name::build(db_state))
+            ::generic_api::service::ServiceInstance {
+                type_service: std::any::TypeId::of::<#struct_name>(),
+                builder: |db_state: &generic_api::database::state::StateDataBase| -> Box<dyn std::any::Any + Sync + Send> {
+                    Box::new(<#struct_name as ::generic_api::service::StartableService>::build(db_state))
                 }
             }
         }
