@@ -5,4 +5,4 @@ edition = "2024"
 
 [dependencies]
 generic-api = {path = "../generic-api"}
-generic-macros = {path = "../generic-macros"}
+generic-macros = {path = "../generic-macros"}   

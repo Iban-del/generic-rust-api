@@ -1,7 +1,7 @@
 use generic_type::routes::{HttpMethod, RouteModuleParams, RouteParams};
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{Item, ItemFn, ItemMod, parse_macro_input, parse_quote};
+use syn::{Item, ItemFn, ItemMod, ItemStruct, parse_macro_input, parse_quote};
 
 // ---- Macro de gestion de route namespace ----
 
@@ -72,6 +72,28 @@ pub fn route(attr: TokenStream, item: TokenStream) -> TokenStream {
                 #uri,
                 || #method_fn(#fn_name)
             )
+        }
+    };
+
+    TokenStream::from(expanded)
+}
+
+#[proc_macro_attribute]
+pub fn service(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    let c_struct: ItemStruct = parse_macro_input!(item as ItemStruct);
+    let struct_name = &c_struct.ident;
+
+    let expanded = quote! {
+
+        #c_struct
+
+        ::inventory::submit! {
+            ::generic_api::service::ServiceInstance{
+                type_service : std::any::TypeId::of::<#struct_name>(),
+                builder : |db_state:&generic_api::database::state::StateDataBase| -> Box<dyn std::any::Any + Sync + Send> {
+                    Box::new(#struct_name::build(db_state))
+                }
+            }
         }
     };
 

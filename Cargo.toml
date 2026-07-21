@@ -25,4 +25,4 @@ async-trait = "0.1"
 chrono = "0.4.45"
 strum = { version = "0.28.0", features = ["derive"] }
 jsonwebtoken = { version = "10.3.0", features = ["aws_lc_rs"] }
-
+downcast-rs = "2.0.1"

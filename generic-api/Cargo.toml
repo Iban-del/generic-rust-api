@@ -17,5 +17,6 @@ async-trait.workspace = true
 chrono.workspace = true
 strum.workspace = true
 jsonwebtoken.workspace = true
+downcast-rs.workspace = true
 generic-type = {path = "../generic-type"}
 generic-tool = {path = "../generic-tool"}
