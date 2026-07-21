@@ -14,10 +14,11 @@ impl ServiceRegistry
 where
     dyn StartableService: std::any::Any,
 {
-    pub fn new() -> Self {
-        Self {
-            registers: HashMap::new(),
-        }
+    pub fn new(
+        db_state: &crate::database::state::StateDataBase,
+    ) -> Result<Self, crate::error::ServiceError> {
+        let registers = Self::load_services(db_state)?;
+        Ok(Self { registers })
     }
 
     pub fn register(&mut self, service: Box<dyn StartableService>) {
@@ -32,6 +33,23 @@ where
             None => None,
         };
         val
+    }
+
+    fn load_services(
+        db_state: &crate::database::state::StateDataBase,
+    ) -> Result<
+        std::collections::HashMap<std::any::TypeId, Box<dyn std::any::Any + Sync + Send>>,
+        crate::error::ServiceError,
+    > {
+        let mut services: std::collections::HashMap<
+            std::any::TypeId,
+            Box<dyn std::any::Any + Sync + Send>,
+        > = HashMap::new();
+        for service in inventory::iter::<crate::service::ServiceInstance> {
+            services.insert(service.type_service, (service.builder)(db_state));
+        }
+
+        Ok(services)
     }
 }
 

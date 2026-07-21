@@ -5,6 +5,17 @@ pub enum AppError {
 
     #[error("Database error : {0}")]
     Database(#[from] DatabaseError),
+
+    #[error("Service error : {0}")]
+    Service(#[from] ServiceError),
+}
+#[derive(Debug, thiserror::Error)]
+pub enum ServiceError {
+    #[error("The service already exist : {0}")]
+    ServiceAlreadyExist(String),
+
+    #[error("Error loding service : {0}")]
+    ErrorLoadingService(String),
 }
 
 #[derive(Debug, thiserror::Error)]
