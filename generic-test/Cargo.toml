@@ -4,3 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+axum = "0.8.9"
+tokio = { version = "1.52.3", features = ["full"] }
+inventory = "0.3.24"
+const_format = "0.2"
+sea-orm = { version = "2", features = ["sqlx-postgres", "runtime-tokio-rustls", "macros"] }
+generic-type = {path = "../generic-type"}
+generic-api = {path = "../generic-api"}
+generic-macros = {path = "../generic-macros"}   
