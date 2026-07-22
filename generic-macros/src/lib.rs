@@ -84,6 +84,8 @@ pub fn service(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let struct_name = &c_struct.ident;
 
     let expanded = quote! {
+
+
         #c_struct
 
         impl axum::extract::FromRef<::generic_api::application::state::AppState> for #struct_name {
@@ -91,7 +93,7 @@ pub fn service(_attr: TokenStream, item: TokenStream) -> TokenStream {
                 state.service_registry
                     .get::<#struct_name>()
                     .clone()
-                    .expect(format!("The service {} not found!", stringify!(TestService)).as_str());
+                    .expect(format!("The service {} not found!", stringify!(TestService)).as_str())
             }
         }
 
