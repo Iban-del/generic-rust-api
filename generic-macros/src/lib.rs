@@ -86,6 +86,15 @@ pub fn service(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let expanded = quote! {
         #c_struct
 
+        impl axum::extract::FromRef<::generic_api::application::state::AppState> for #struct_name {
+            fn from_ref(state: &::generic_api::application::state::AppState) -> Self {
+                state.service_registry
+                    .get::<#struct_name>()
+                    .clone()
+                    .expect(format!("The service {} not found!", stringify!(TestService)).as_str());
+            }
+        }
+
         ::inventory::submit! {
             ::generic_api::service::ServiceInstance {
                 type_service: std::any::TypeId::of::<#struct_name>(),

@@ -43,7 +43,9 @@ impl App {
     // ---- Construction du Appstate ----
 
     async fn build_state(config: Config) -> anyhow::Result<AppState> {
-        anyhow::Ok(AppState::new(config).await?)
+        let state = AppState::new(config).await?;
+
+        anyhow::Ok(state)
     }
 }
 

@@ -7,6 +7,7 @@
 
 /// État global regroupant l'ensemble des pools de connexions SQL de
 /// l'application, indexés par leur alias.
+#[derive(Debug, Clone)]
 pub struct StateDataBase {
     /// Table associant chaque alias de connexion (`String`) à son
     /// pool de connexions SQL correspondant ([`SqlPool`](crate::database::sql_pool::SqlPool)).
@@ -123,5 +124,11 @@ impl StateDataBase {
         let pool: &crate::database::sql_pool::SqlPool = self.get_sql_pool(alias)?;
         let conn: &sea_orm::DatabaseConnection = pool.get_connection();
         Ok(conn)
+    }
+}
+
+impl axum::extract::FromRef<crate::application::state::AppState> for StateDataBase {
+    fn from_ref(state: &crate::application::state::AppState) -> Self {
+        state.db_state.clone()
     }
 }

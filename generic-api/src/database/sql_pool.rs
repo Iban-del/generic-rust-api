@@ -10,6 +10,7 @@
 /// Cette structure encapsule une instance de
 /// `sea_orm::DatabaseConnection` afin de centraliser la gestion du
 /// cycle de vie de la connexion (création, vérification, fermeture).
+#[derive(Debug, Clone)]
 pub struct SqlPool {
     /// Connexion active vers la base de données, gérée par `sea_orm`.
     connection: sea_orm::DatabaseConnection,
