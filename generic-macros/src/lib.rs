@@ -97,7 +97,7 @@ pub fn service(_attr: TokenStream, item: TokenStream) -> TokenStream {
         impl Clone for #struct_name {
             fn clone(&self) -> Self {
                 Self {
-                    #(#field_name :self.#field_name.clone(),)*
+                    #(#field_name: self.#field_name.clone(),)*
                 }
             }
         }
