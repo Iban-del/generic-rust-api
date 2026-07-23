@@ -97,7 +97,7 @@ pub fn service(_attr: TokenStream, item: TokenStream) -> TokenStream {
         impl Clone for #struct_name {
             fn clone(&self) -> Self {
                 Self {
-                    #(self.#field_name.clone(),)*
+                    #(#field_name :self.#field_name.clone(),)*
                 }
             }
         }
@@ -108,7 +108,7 @@ pub fn service(_attr: TokenStream, item: TokenStream) -> TokenStream {
                 state
                     .service_registry
                     .get::<#struct_name>()
-                    .expect(format!("The service {} not found!", stringify!(TestService)).as_str())
+                    .expect(format!("The service {} not found!", stringify!(#struct_name)).as_str())
                     .clone()
             }
         }
