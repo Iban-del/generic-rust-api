@@ -103,8 +103,8 @@ pub fn service(_attr: TokenStream, item: TokenStream) -> TokenStream {
         }
 
 
-        impl axum::extract::FromRef<generic_api::application::state::AppState> for #struct_name {
-            fn from_ref(state: &generic_api::application::state::AppState) -> Self {
+        impl axum::extract::FromRef<std::sync::Arc<generic_api::application::state::AppState>> for #struct_name {
+            fn from_ref(state: &std::sync::Arc<generic_api::application::state::AppState>) -> Self {
                 state
                     .service_registry
                     .get::<#struct_name>()
