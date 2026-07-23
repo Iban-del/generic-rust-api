@@ -103,9 +103,10 @@ pub fn service(_attr: TokenStream, item: TokenStream) -> TokenStream {
         }
 
 
-        impl axum::extract::FromRef<::generic_api::application::state::AppState> for #struct_name {
-            fn from_ref(state: &::generic_api::application::state::AppState) -> Self {
-                state.service_registry
+        impl axum::extract::FromRef<generic_api::application::state::AppState> for #struct_name {
+            fn from_ref(state: &generic_api::application::state::AppState) -> Self {
+                state
+                    .service_registry
                     .get::<#struct_name>()
                     .expect(format!("The service {} not found!", stringify!(TestService)).as_str())
                     .clone()

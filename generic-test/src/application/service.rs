@@ -18,6 +18,11 @@ impl generic_api::service::StartableService for TestService {
     }
 }
 
+// impl Clone for TestService {
+//     fn clone(&self) -> Self {
+//         Self {}
+//     }
+// }
 // impl axum::extract::FromRef<::generic_api::application::state::AppState> for TestService {
 //     fn from_ref(state: &::generic_api::application::state::AppState) -> Self {
 //         state
