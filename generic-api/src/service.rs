@@ -1,63 +1,63 @@
+use std::any::{Any, TypeId};
 use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
 
-pub trait StartableService: std::any::Any + Sync + Send {
-    fn build(db_state: &crate::database::state::StateDataBase) -> Self
+pub trait StartableService: Any + Sync + Send {
+    fn build(registry_manager: &crate::registry::RegistryManager) -> Self
     where
         Self: Sized;
 }
 
 pub struct ServiceRegistry {
-    registers: std::collections::HashMap<std::any::TypeId, Box<dyn std::any::Any + Sync + Send>>,
+    builders: HashMap<TypeId, fn(&crate::registry::RegistryManager) -> Box<dyn Any + Sync + Send>>,
+    built: RwLock<HashMap<TypeId, Arc<dyn Any + Sync + Send>>>,
 }
 
-impl ServiceRegistry
-where
-    dyn StartableService: std::any::Any,
-{
-    pub fn new(
-        db_state: &crate::database::state::StateDataBase,
-    ) -> Result<Self, crate::error::ServiceError> {
-        let registers = Self::load_services(db_state)?;
-        Ok(Self { registers })
-    }
+impl ServiceRegistry {
+    /// Ne fait qu'enregistrer les recettes de construction (builders),
+    /// sans exécuter aucune d'entre elles. Ne nécessite donc pas de
+    /// RegistryManager déjà construit.
+    pub fn new() -> Self {
+        let mut builders = HashMap::new();
+        for service in inventory::iter::<ServiceInstance> {
+            builders.insert(service.type_service, service.builder);
+        }
 
-    pub fn register(&mut self, service: Box<dyn StartableService>) {
-        if !self.registers.contains_key(&service.type_id()) {
-            self.registers.insert(service.type_id(), service);
+        Self {
+            builders,
+            built: RwLock::new(HashMap::new()),
         }
     }
 
-    pub fn get<T: StartableService>(&self) -> Option<&T> {
-        let val = match self.registers.get(&std::any::TypeId::of::<T>()) {
-            Some(service) => service.downcast_ref::<T>(),
-            None => None,
-        };
-        val
-    }
-
-    fn load_services(
-        db_state: &crate::database::state::StateDataBase,
-    ) -> Result<
-        std::collections::HashMap<std::any::TypeId, Box<dyn std::any::Any + Sync + Send>>,
-        crate::error::ServiceError,
-    > {
-        let mut services: std::collections::HashMap<
-            std::any::TypeId,
-            Box<dyn std::any::Any + Sync + Send>,
-        > = HashMap::new();
-        for service in inventory::iter::<crate::service::ServiceInstance> {
-            services.insert(service.type_service, (service.builder)(db_state));
+    /// Construit (ou récupère si déjà construit) le service demandé.
+    /// `registry_manager` est passé ici, au moment de l'appel, pas
+    /// stocké dans le registre — ça évite la référence circulaire.
+    pub fn get<T: StartableService>(
+        &self,
+        registry_manager: &crate::registry::RegistryManager,
+    ) -> Arc<T> {
+        if let Some(existing) = self.built.read().unwrap().get(&TypeId::of::<T>()) {
+            return existing.clone().downcast::<T>().expect("type mismatch");
         }
 
-        Ok(services)
+        let builder = self
+            .builders
+            .get(&TypeId::of::<T>())
+            .unwrap_or_else(|| panic!("Service {} non enregistré", std::any::type_name::<T>()));
+
+        let instance: Arc<dyn Any + Sync + Send> = Arc::from(builder(registry_manager));
+        self.built
+            .write()
+            .unwrap()
+            .insert(TypeId::of::<T>(), instance.clone());
+
+        instance.downcast::<T>().expect("type mismatch")
     }
 }
 
 pub struct ServiceInstance {
-    pub type_service: std::any::TypeId,
-    pub builder: fn(
-        db_state: &crate::database::state::StateDataBase,
-    ) -> Box<dyn std::any::Any + Sync + Send>,
+    pub type_service: TypeId,
+    pub builder: fn(&crate::registry::RegistryManager) -> Box<dyn Any + Sync + Send>,
 }
 
 inventory::collect!(ServiceInstance);

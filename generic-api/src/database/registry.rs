@@ -1,21 +1,21 @@
-//! Module de gestion de l'état global des bases de données de
+//! Module de gestion du registre global des bases de données de
 //! l'application.
 //!
-//! Ce module expose la structure [`StateDataBase`], qui centralise
+//! Ce module expose la structure [`RegistryDatabase`], qui centralise
 //! l'ensemble des pools de connexions SQL (un par alias) et fournit
 //! des méthodes d'accès pour les récupérer.
 
-/// État global regroupant l'ensemble des pools de connexions SQL de
+/// Registre global regroupant l'ensemble des pools de connexions SQL de
 /// l'application, indexés par leur alias.
 #[derive(Debug, Clone)]
-pub struct StateDataBase {
+pub struct RegistryDatabase {
     /// Table associant chaque alias de connexion (`String`) à son
     /// pool de connexions SQL correspondant ([`SqlPool`](crate::database::sql_pool::SqlPool)).
     sql_contections: std::collections::HashMap<String, crate::database::sql_pool::SqlPool>,
 }
 
-impl StateDataBase {
-    /// Crée une nouvelle instance de [`StateDataBase`] à partir de la
+impl RegistryDatabase {
+    /// Crée une nouvelle instance de [`RegistryDatabase`] à partir de la
     /// configuration globale de la base de données.
     ///
     /// Cette méthode initialise l'ensemble des pools de connexions SQL
@@ -73,7 +73,7 @@ impl StateDataBase {
     }
 }
 
-impl StateDataBase {
+impl RegistryDatabase {
     /// Récupère le pool de connexions SQL correspondant à un alias
     /// donné.
     ///
@@ -124,11 +124,5 @@ impl StateDataBase {
         let pool: &crate::database::sql_pool::SqlPool = self.get_sql_pool(alias)?;
         let conn: &sea_orm::DatabaseConnection = pool.get_connection();
         Ok(conn)
-    }
-}
-
-impl axum::extract::FromRef<crate::application::state::AppState> for StateDataBase {
-    fn from_ref(state: &crate::application::state::AppState) -> Self {
-        state.db_state.clone()
     }
 }
