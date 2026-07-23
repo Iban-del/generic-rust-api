@@ -1,5 +1,9 @@
 use std::sync::Arc;
 
+use axum::{
+    extract::Request,
+    middleware::{self, Next},
+};
 use generic_tool::read_json;
 
 use crate::{application::state::AppState, config::Config, routes::ApiRoute};
@@ -21,7 +25,7 @@ impl App {
     }
 
     pub async fn run(&self) -> Result<(), Box<dyn std::error::Error>> {
-        let app = self.build_router()?;
+        let mut app = self.build_router()?;
 
         let listener = tokio::net::TcpListener::bind(self.config.addr.format()?).await?;
 
@@ -49,4 +53,4 @@ impl App {
     }
 }
 
-impl App {}
+// gestion des layers

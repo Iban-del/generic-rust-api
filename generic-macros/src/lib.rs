@@ -28,13 +28,6 @@ pub fn route_space(attr: TokenStream, item: TokenStream) -> TokenStream {
 
 // ---- Macro de gestion des routes ----
 
-/// Fonction macro pour gerer les route automatiquement
-///
-/// # Exemple
-/// #[route(HttpMethod::GET, "/")]
-/// async fn home() -> Json<Value> {
-///    Json(json!({ "data": "Hello world!" }))
-/// }
 #[proc_macro_attribute]
 pub fn route(attr: TokenStream, item: TokenStream) -> TokenStream {
     let input_fn: ItemFn = parse_macro_input!(item as ItemFn);
