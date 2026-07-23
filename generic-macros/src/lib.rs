@@ -82,18 +82,33 @@ pub fn route(attr: TokenStream, item: TokenStream) -> TokenStream {
 pub fn service(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let c_struct: ItemStruct = parse_macro_input!(item as ItemStruct);
     let struct_name = &c_struct.ident;
+    let fields: &syn::punctuated::Punctuated<syn::Field, syn::token::Comma> = match &c_struct.fields
+    {
+        syn::Fields::Named(fields_named) => &fields_named.named,
+        _ => panic!("This macro only supports structs with named fields"),
+    };
+
+    let field_name = fields.iter().map(|field| &field.ident);
 
     let expanded = quote! {
 
-
         #c_struct
+
+        impl Clone for #struct_name {
+            fn clone(&self) -> Self {
+                Self {
+                    #(self.#field_name.clone(),)*
+                }
+            }
+        }
+
 
         impl axum::extract::FromRef<::generic_api::application::state::AppState> for #struct_name {
             fn from_ref(state: &::generic_api::application::state::AppState) -> Self {
                 state.service_registry
                     .get::<#struct_name>()
-                    .clone()
                     .expect(format!("The service {} not found!", stringify!(TestService)).as_str())
+                    .clone()
             }
         }
 
