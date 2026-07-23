@@ -102,22 +102,17 @@ pub fn service(_attr: TokenStream, item: TokenStream) -> TokenStream {
             }
         }
 
-
         impl axum::extract::FromRef<std::sync::Arc<generic_api::application::state::AppState>> for #struct_name {
             fn from_ref(state: &std::sync::Arc<generic_api::application::state::AppState>) -> Self {
-                state
-                    .service_registry
-                    .get::<#struct_name>()
-                    .expect(format!("The service {} not found!", stringify!(#struct_name)).as_str())
-                    .clone()
+                (*state.registry_manager.get::<#struct_name>()).clone()
             }
         }
 
         ::inventory::submit! {
             ::generic_api::service::ServiceInstance {
                 type_service: std::any::TypeId::of::<#struct_name>(),
-                builder: |db_state: &generic_api::database::state::StateDataBase| -> Box<dyn std::any::Any + Sync + Send> {
-                    Box::new(<#struct_name as ::generic_api::service::StartableService>::build(db_state))
+                builder: |registry_manager: &generic_api::registry::RegistryManager| -> Box<dyn std::any::Any + Sync + Send> {
+                    Box::new(<#struct_name as ::generic_api::service::StartableService>::build(registry_manager))
                 }
             }
         }
